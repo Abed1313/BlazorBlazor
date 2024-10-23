@@ -1,0 +1,88 @@
+﻿@page "/movies"
+@using BlazorApp3.Shared;
+@using BlazorApp3.Client.Serveses
+@inject MovieServes MovieService
+
+<h3>Movies</h3>
+
+@if (movies == null)
+{
+    <p><em>Loading movies...</em></p>
+}
+else if (selectedMovie == null && !addingMovie)
+{
+    <ul>
+        @foreach (var movie in movies)
+        {
+            <li>
+                <a href="javascript:void(0)" @onclick="() => ShowMovieDetails(movie.MovieId)">
+                    @movie.Title
+                </a>
+            </li>
+        }
+    </ul>
+    <button @onclick="StartAddingMovie">Add New Movie</button>
+}
+else if (selectedMovie != null)
+{
+    <h4>Movie Details</h4>
+    <p><strong>Title:</strong> @selectedMovie.Title</p>
+    <p><strong>Description:</strong> @selectedMovie.Description</p>
+    <button @onclick="ClearSelectedMovie">Back to List</button>
+}
+else if (addingMovie)
+{
+    <h4>Add New Movie</h4>
+    <EditForm Model="newMovie" OnValidSubmit="HandleAddMovie">
+        <div>
+            <label>Title:</label>
+            <InputText @bind-Value="newMovie.Title" />
+        </div>
+        <div>
+            <label>Description:</label>
+            <InputTextArea @bind-Value="newMovie.Description" />
+        </div>
+        <button type="submit">Submit</button>
+        <button type="button" @onclick="CancelAddMovie">Cancel</button>
+    </EditForm>
+}
+
+@code {
+    private List<Movie> movies;
+    private Movie selectedMovie;
+    private Movie newMovie = new Movie();
+    private bool addingMovie = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        movies = await MovieService.GetAllMovie();
+    }
+
+    private async Task ShowMovieDetails(int id)
+    {
+        selectedMovie = await MovieService.GetMovieById(id);
+    }
+
+    private void ClearSelectedMovie()
+    {
+        selectedMovie = null;
+    }
+
+    private void StartAddingMovie()
+    {
+        addingMovie = true;
+        newMovie = new Movie(); // Reset form
+    }
+
+    private async Task HandleAddMovie()
+    {
+        var addedMovie = await MovieService.AddMovie(newMovie);
+        movies.Add(addedMovie);
+        addingMovie = false;
+    }
+
+    private void CancelAddMovie()
+    {
+        addingMovie = false;
+    }
+}
